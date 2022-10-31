@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Reflection;
 
 namespace Calculator.Controllers
 {
@@ -8,91 +9,219 @@ namespace Calculator.Controllers
     public class MainController : ControllerBase
     {
 
-        [HttpGet]
+        [HttpGet("calculate")]
         public double Calculate(string sum)
         {
             double total = 0;
 
             try
             {
-                List<double> digit = new List<double>();
+            
+                List<double> numList = new List<double>();
 
-                double dg = 0;
+                List<bool> isBracket = new List<bool>();
 
-                double temp = 0;
+                List<char> oper = new List<char>();
 
-                double bdg = 0;
+                string newNum = "";
+                int len = sum.Length;
+                int l = 1;
+                bool inBracket = false;
+                //bool endBracket = false;
 
-                bool bracket = false;
-
-                foreach (var str in sum)
+                foreach (var s in sum)
                 {
-                    if (str == '(')
+                    
+                    if(Char.IsDigit(s))
                     {
-                        bdg = 0;
-                        bracket = true;
-                    }
-                    else if (str == ')')
-                    {
-                        digit.Add(bdg);
-                        bdg = 0;
-                        temp = 0;
-                        bracket= false;
-                    }
-                    else if (str == '+')
-                    {
-                        if(bracket)
-                        {
-                            bdg = temp + bdg;
-                        }
-                        else
-                        {
-                            dg = temp + dg;
-                            temp = 0;
-                        }
+                        newNum = newNum + s.ToString();
+
                         
                     }
-                    else if (str == '-')
+                    else if(s == '.')
                     {
-                        if (bracket)
-                        {
+                        newNum = newNum + s.ToString();
+                    }
+                    else if (s == '(')
+                    {
+                        inBracket = true;
+                    }
+                    else if (s == ')')
+                    {
+                        inBracket= false;
+                    }
+                    else if(s == '+' || s == '-' || s == '*' || s == '/')
+                    {
+                        oper.Add(s);
 
-                        }
-                        else
+                        
+                    }
+                    else if (s == ' ')
+                    {
+                        if(newNum != "")
                         {
-                            dg = temp - dg;
-                            temp = 0;
+                            numList.Add(Convert.ToDouble(newNum));
+
+                            if(inBracket)
+                                isBracket.Add(true);
+                            else
+                                isBracket.Add(false);
+
+                            newNum = "";
+
+                            
                         }
                     }
-                    else if (str == '*')
-                    {
-                        dg = temp * dg;
-                        temp = 0;
-                    }
-                    else if (str == '/')
-                    {
-                        dg = temp / dg;
-                        temp = 0;
-                    }
-                    else if(str == ' ')
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        temp = Convert.ToDouble(str.ToString());
-                        dg = temp;
 
-                        if(bracket == false)
-                            digit.Add(dg);
-                        else
-                            bdg = temp;
+                    if (l == len)
+                    {
+                        if (!String.IsNullOrEmpty(newNum))
+                        {
+                            numList.Add(Convert.ToDouble(newNum));
+                            isBracket.Add(false);
+                        }
                     }
+                        
+
+                    l++;
                 }
 
-                foreach (var d in digit)
+                double bracket = 0;
+                double nonBracket = 0;
+                int counter = -1;
+
+                for(int n = 0; n < numList.Count; n++)
                 {
-                    total = total + d;
+                    if (isBracket[n] == true)
+                    {
+                        if((n == 0 || n == 1) && counter == -1)
+                        {
+                            bracket = numList[n];
+                            counter = n;
+                        }
+                        else
+                        {
+                            if (oper[counter] == '+')
+                            {
+                                bracket = bracket + numList[n];
+                            }
+                            else if (oper[counter] == '-')
+                            {
+                                bracket = bracket - numList[n];
+                            }
+                            else if (oper[counter] == '*')
+                            {
+                                bracket = bracket * numList[n];
+                            }
+                            else if (oper[counter] == '/')
+                            {
+                                bracket = bracket / numList[n];
+                            }
+
+
+                        }
+                       
+
+                    }
+            
+                     
+                }
+
+                int counter2 = -1;
+
+                for(int k = 0; k < numList.Count; k++)
+                {
+                 
+                        if (isBracket[k] == false)
+                        {
+                            if (counter2 == -1)
+                            {
+                                nonBracket = numList[k];
+                                counter2 = k - 1;
+
+                            if (counter2 == -1)
+                                counter2 = 0;
+                            }
+                            else
+                            {
+                                if (oper[counter2] == '+')
+                                {
+                                    nonBracket = nonBracket + numList[k];
+                                }
+                                else if (oper[counter2] == '-')
+                                {
+                                    nonBracket = nonBracket - numList[k];
+                                }
+                                else if (oper[counter2] == '*')
+                                {
+                                    nonBracket = nonBracket * numList[k];
+                                }
+                                else if (oper[counter2] == '/')
+                                {
+                                    nonBracket = nonBracket / numList[k];
+                                }
+
+                               counter2++;
+                            }
+
+
+                        }
+
+                    
+                }
+
+                if(counter > -1)
+                {
+
+
+                    if(counter == 0)
+                    {
+                        counter++;
+
+                        if (oper[counter] == '+')
+                        {
+                            total = bracket + nonBracket;
+                        }
+                        else if (oper[counter] == '-')
+                        {
+                            total = bracket - nonBracket;
+                        }
+                        else if (oper[counter] == '*')
+                        {
+                            total = bracket * nonBracket;
+                        }
+                        else if (oper[counter] == '/')
+                        {
+                            total = bracket / nonBracket;
+                        }
+                    }
+                    else if(counter == 1)
+                    {
+                        counter--;
+
+                        if (oper[counter] == '+')
+                        {
+                            total = nonBracket + bracket;
+                        }
+                        else if (oper[counter] == '-')
+                        {
+                            total = nonBracket - bracket;
+                        }
+                        else if (oper[counter] == '*')
+                        {
+                            total = nonBracket * bracket;
+                        }
+                        else if (oper[counter] == '/')
+                        {
+                            total = nonBracket / bracket;
+                        }
+                    }
+
+                    
+                }
+                else
+                {
+                    total = nonBracket;
                 }
 
                 return total;
